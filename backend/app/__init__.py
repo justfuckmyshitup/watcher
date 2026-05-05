@@ -1,0 +1,2 @@
+"""Local Scribe backend package."""
+

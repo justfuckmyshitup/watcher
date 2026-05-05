@@ -1,0 +1,35 @@
+services:
+  backend:
+    profiles: ["mock", "cpu", "dev"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    environment:
+      LOCAL_SCRIBE_CONTAINERIZED: "true"
+      LOCAL_SCRIBE_PROVIDER: "${LOCAL_SCRIBE_PROVIDER:-mock}"
+      LOCAL_SCRIBE_OLLAMA_URL: "${LOCAL_SCRIBE_OLLAMA_URL:-http://host.docker.internal:11434}"
+      LOCAL_SCRIBE_LMSTUDIO_URL: "${LOCAL_SCRIBE_LMSTUDIO_URL:-http://host.docker.internal:1234}"
+      LOCAL_SCRIBE_APP_DATA: "/app/app-data"
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - local-scribe-app-data:/app/app-data
+    tmpfs:
+      - /tmp
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/api/health', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  local-scribe-app-data:
+

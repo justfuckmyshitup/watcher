@@ -1,0 +1,32 @@
+{
+  "name": "local-scribe",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first desktop documentation assistant with ephemeral capture processing.",
+  "license": "MIT",
+  "keywords": [
+    "local-first",
+    "desktop",
+    "privacy",
+    "ocr",
+    "notes",
+    "electron",
+    "fastapi",
+    "bring-your-own-model"
+  ],
+  "workspaces": [
+    "apps/desktop"
+  ],
+  "scripts": {
+    "backend": "python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8765",
+    "dev:desktop": "npm --workspace @localscribe/desktop run dev",
+    "desktop": "npm --workspace @localscribe/desktop run electron:dev",
+    "build": "npm --workspace @localscribe/desktop run build",
+    "test": "python -m pytest backend/tests",
+    "smoke": "python scripts/smoke_test.py"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3"
+  }
+}

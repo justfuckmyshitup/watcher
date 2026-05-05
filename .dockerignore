@@ -1,0 +1,13 @@
+node_modules
+apps/desktop/node_modules
+apps/desktop/dist
+app-data/db
+app-data/exports
+app-data/logs
+app-data/tmp
+__pycache__
+.pytest_cache
+*.pyc
+.env
+.git
+
