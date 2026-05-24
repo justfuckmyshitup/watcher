@@ -6,6 +6,7 @@ from collections import Counter
 from sqlalchemy import desc
 from sqlalchemy.orm import Session as DbSession
 
+from backend.app.context.focus_filter import clean_focus_text
 from backend.app.storage.models import ContextEvent, Session, TaskRollup, TopicRollup, utcnow
 
 
@@ -33,7 +34,8 @@ TASK_KEYWORDS = {
 
 class ContextLatticeService:
     def classify(self, text: str, active_app: str = "", window_title: str = "", objective: str = "") -> tuple[str, str, float]:
-        observed_haystack = f"{active_app} {window_title} {text}".lower()
+        focused_text = clean_focus_text(text, strip_file_references=True)
+        observed_haystack = f"{active_app} {window_title} {focused_text}".lower()
         objective_haystack = objective.lower()
         topic = self._best_match(observed_haystack, TOPIC_KEYWORDS, "")
         task = self._best_match(observed_haystack, TASK_KEYWORDS, "")
@@ -101,7 +103,12 @@ class ContextLatticeService:
 
     @staticmethod
     def _rollup_summary(events: list[ContextEvent], attr: str, value: str) -> str:
-        snippets = [event.summary_snippet for event in events if getattr(event, attr) == value and event.summary_snippet]
+        snippets = [
+            clean_focus_text(event.summary_snippet, strip_file_references=True)
+            for event in events
+            if getattr(event, attr) == value and event.summary_snippet
+        ]
+        snippets = [snippet for snippet in snippets if snippet]
         joined = " ".join(snippets[:5])
         if not joined:
             return f"{value.replace('_', ' ').title()} activity was observed without extracted text."

@@ -35,7 +35,7 @@ def create_app() -> FastAPI:
     init_db()
     close_open_sessions_on_start()
     app = FastAPI(
-        title="Local Scribe Backend",
+        title="Watcher Backend",
         description="Local-only context memory and note generation backend.",
         version="0.1.0",
     )
@@ -44,7 +44,7 @@ def create_app() -> FastAPI:
         allow_origins=[
             "http://127.0.0.1:5173",
             "http://localhost:5173",
-            "app://local-scribe",
+            "app://watcher",
             "file://",
         ],
         allow_credentials=True,

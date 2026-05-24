@@ -1,6 +1,6 @@
 # Privacy
 
-Local Scribe is designed around explicit local capture and compact redacted memory.
+Watcher is designed around explicit local capture and compact redacted memory.
 
 ## Core Rule
 

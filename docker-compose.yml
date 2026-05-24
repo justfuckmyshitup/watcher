@@ -5,15 +5,15 @@ services:
       context: .
       dockerfile: docker/Dockerfile.backend
     environment:
-      LOCAL_SCRIBE_CONTAINERIZED: "true"
-      LOCAL_SCRIBE_PROVIDER: "${LOCAL_SCRIBE_PROVIDER:-mock}"
-      LOCAL_SCRIBE_OLLAMA_URL: "${LOCAL_SCRIBE_OLLAMA_URL:-http://host.docker.internal:11434}"
-      LOCAL_SCRIBE_LMSTUDIO_URL: "${LOCAL_SCRIBE_LMSTUDIO_URL:-http://host.docker.internal:1234}"
-      LOCAL_SCRIBE_APP_DATA: "/app/app-data"
+      WATCHER_CONTAINERIZED: "true"
+      WATCHER_PROVIDER: "${WATCHER_PROVIDER:-mock}"
+      WATCHER_OLLAMA_URL: "${WATCHER_OLLAMA_URL:-http://host.docker.internal:11434}"
+      WATCHER_LMSTUDIO_URL: "${WATCHER_LMSTUDIO_URL:-http://host.docker.internal:1234}"
+      WATCHER_APP_DATA: "/app/app-data"
     ports:
       - "127.0.0.1:8765:8765"
     volumes:
-      - local-scribe-app-data:/app/app-data
+      - watcher-app-data:/app/app-data
     tmpfs:
       - /tmp
     read_only: true
@@ -31,5 +31,5 @@ services:
       start_period: 10s
 
 volumes:
-  local-scribe-app-data:
+  watcher-app-data:
 

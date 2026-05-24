@@ -20,6 +20,6 @@ param(
   [switch]$SkipModelCheck
 )
 
-$launcher = Join-Path $PSScriptRoot "scripts\start-localscribe.ps1"
+$launcher = Join-Path $PSScriptRoot "scripts\start-watcher.ps1"
 & $launcher @PSBoundParameters
 exit $LASTEXITCODE

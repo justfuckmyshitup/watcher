@@ -1,21 +1,21 @@
-$script:LocalScribePrefix = "[Local Scribe]"
+$script:WatcherPrefix = "[Watcher]"
 
-function Write-LSStatus {
+function Write-WatcherStatus {
   param([string]$Message)
-  Write-Host "$script:LocalScribePrefix $Message"
+  Write-Host "$script:WatcherPrefix $Message"
 }
 
-function Write-LSWarn {
+function Write-WatcherWarn {
   param([string]$Message)
-  Write-Host "$script:LocalScribePrefix WARNING: $Message" -ForegroundColor Yellow
+  Write-Host "$script:WatcherPrefix WARNING: $Message" -ForegroundColor Yellow
 }
 
-function Write-LSErrorMessage {
+function Write-WatcherErrorMessage {
   param([string]$Message)
-  Write-Host "$script:LocalScribePrefix ERROR: $Message" -ForegroundColor Red
+  Write-Host "$script:WatcherPrefix ERROR: $Message" -ForegroundColor Red
 }
 
-function Get-LSLogTail {
+function Get-WatcherLogTail {
   param(
     [string]$Path,
     [int]$Lines = 20
@@ -26,18 +26,18 @@ function Get-LSLogTail {
   return ((Get-Content -LiteralPath $Path -Tail $Lines -ErrorAction SilentlyContinue) -join "`n")
 }
 
-function Get-LSRepoRoot {
+function Get-WatcherRepoRoot {
   return (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 }
 
-function Ensure-LSDirectory {
+function Ensure-WatcherDirectory {
   param([string]$Path)
   if (-not (Test-Path -LiteralPath $Path)) {
     New-Item -ItemType Directory -Force -Path $Path | Out-Null
   }
 }
 
-function Clear-LSDirectoryContents {
+function Clear-WatcherDirectoryContents {
   param([string]$Path)
   if (-not (Test-Path -LiteralPath $Path)) {
     return 0
@@ -57,21 +57,21 @@ function Clear-LSDirectoryContents {
   return $removed
 }
 
-function Get-LSLauncherDir {
+function Get-WatcherLauncherDir {
   param([string]$RepoRoot)
   $path = Join-Path $RepoRoot "app-data\launcher"
-  Ensure-LSDirectory $path
+  Ensure-WatcherDirectory $path
   return $path
 }
 
-function Get-LSStatePath {
+function Get-WatcherStatePath {
   param([string]$RepoRoot)
-  return (Join-Path (Get-LSLauncherDir $RepoRoot) "localscribe-processes.json")
+  return (Join-Path (Get-WatcherLauncherDir $RepoRoot) "watcher-processes.json")
 }
 
-function Read-LSState {
+function Read-WatcherState {
   param([string]$RepoRoot)
-  $path = Get-LSStatePath $RepoRoot
+  $path = Get-WatcherStatePath $RepoRoot
   if (-not (Test-Path -LiteralPath $path)) {
     return $null
   }
@@ -82,24 +82,24 @@ function Read-LSState {
   }
 }
 
-function Write-LSState {
+function Write-WatcherState {
   param(
     [string]$RepoRoot,
     [hashtable]$State
   )
-  $path = Get-LSStatePath $RepoRoot
+  $path = Get-WatcherStatePath $RepoRoot
   ($State | ConvertTo-Json -Depth 6) | Set-Content -LiteralPath $path -Encoding UTF8
 }
 
-function Remove-LSState {
+function Remove-WatcherState {
   param([string]$RepoRoot)
-  $path = Get-LSStatePath $RepoRoot
+  $path = Get-WatcherStatePath $RepoRoot
   if (Test-Path -LiteralPath $path) {
     Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
   }
 }
 
-function Test-LSProcessRunning {
+function Test-WatcherProcessRunning {
   param([Nullable[int]]$ProcessId)
   if (-not $ProcessId) {
     return $false
@@ -112,14 +112,14 @@ function Test-LSProcessRunning {
   }
 }
 
-function Get-LSChildProcessIds {
+function Get-WatcherChildProcessIds {
   param([int]$ParentProcessId)
   $children = @()
   try {
     $direct = Get-CimInstance Win32_Process -Filter "ParentProcessId=$ParentProcessId" -ErrorAction Stop
     foreach ($child in $direct) {
       $children += [int]$child.ProcessId
-      $children += Get-LSChildProcessIds -ParentProcessId ([int]$child.ProcessId)
+      $children += Get-WatcherChildProcessIds -ParentProcessId ([int]$child.ProcessId)
     }
   } catch {
     return @()
@@ -127,27 +127,27 @@ function Get-LSChildProcessIds {
   return $children
 }
 
-function Stop-LSProcessTree {
+function Stop-WatcherProcessTree {
   param(
     [Nullable[int]]$ProcessId,
     [string]$Name = "process"
   )
-  if (-not (Test-LSProcessRunning $ProcessId)) {
+  if (-not (Test-WatcherProcessRunning $ProcessId)) {
     return
   }
-  $children = Get-LSChildProcessIds -ParentProcessId ([int]$ProcessId)
+  $children = Get-WatcherChildProcessIds -ParentProcessId ([int]$ProcessId)
   foreach ($childId in ($children | Select-Object -Unique | Sort-Object -Descending)) {
-    if (Test-LSProcessRunning $childId) {
+    if (Test-WatcherProcessRunning $childId) {
       Stop-Process -Id $childId -Force -ErrorAction SilentlyContinue
     }
   }
-  if (Test-LSProcessRunning $ProcessId) {
-    Write-LSStatus "Stopping $Name (PID $ProcessId)..."
+  if (Test-WatcherProcessRunning $ProcessId) {
+    Write-WatcherStatus "Stopping $Name (PID $ProcessId)..."
     Stop-Process -Id $ProcessId -Force -ErrorAction SilentlyContinue
   }
 }
 
-function Get-LSCommand {
+function Get-WatcherCommand {
   param([string[]]$Names)
   foreach ($name in $Names) {
     $command = Get-Command $name -ErrorAction SilentlyContinue
@@ -158,7 +158,7 @@ function Get-LSCommand {
   return $null
 }
 
-function Test-LSPortOpen {
+function Test-WatcherPortOpen {
   param([int]$Port)
   $client = New-Object System.Net.Sockets.TcpClient
   try {
@@ -176,7 +176,7 @@ function Test-LSPortOpen {
   }
 }
 
-function Get-LSPortOwner {
+function Get-WatcherPortOwner {
   param([int]$Port)
   try {
     $connection = Get-NetTCPConnection -LocalAddress "127.0.0.1" -LocalPort $Port -State Listen -ErrorAction Stop | Select-Object -First 1
@@ -196,7 +196,7 @@ function Get-LSPortOwner {
   return $null
 }
 
-function Get-LSProcessCommandLine {
+function Get-WatcherProcessCommandLine {
   param([Nullable[int]]$ProcessId)
   if (-not $ProcessId) {
     return ""
@@ -209,7 +209,7 @@ function Get-LSProcessCommandLine {
   }
 }
 
-function Invoke-LSHealthCheck {
+function Invoke-WatcherHealthCheck {
   param([int]$BackendPort)
   try {
     return Invoke-RestMethod -Uri "http://127.0.0.1:$BackendPort/api/health" -TimeoutSec 2 -ErrorAction Stop
@@ -218,15 +218,15 @@ function Invoke-LSHealthCheck {
   }
 }
 
-function Wait-LSBackendHealth {
+function Wait-WatcherBackendHealth {
   param(
     [int]$BackendPort,
     [int]$TimeoutSeconds = 45
   )
   $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
   while ((Get-Date) -lt $deadline) {
-    $health = Invoke-LSHealthCheck -BackendPort $BackendPort
-    if ($health -and $health.ok -eq $true -and $health.app -eq "Local Scribe") {
+    $health = Invoke-WatcherHealthCheck -BackendPort $BackendPort
+    if ($health -and $health.ok -eq $true -and $health.app -eq "Watcher") {
       return $true
     }
     Start-Sleep -Milliseconds 600
@@ -234,7 +234,7 @@ function Wait-LSBackendHealth {
   return $false
 }
 
-function Wait-LSVite {
+function Wait-WatcherVite {
   param(
     [int]$VitePort,
     [int]$TimeoutSeconds = 45
@@ -253,7 +253,7 @@ function Wait-LSVite {
   return $false
 }
 
-function Invoke-LSLoggedCommand {
+function Invoke-WatcherLoggedCommand {
   param(
     [string]$FilePath,
     [string[]]$ArgumentList,
@@ -261,7 +261,7 @@ function Invoke-LSLoggedCommand {
     [string]$LogPath,
     [string]$FailureMessage
   )
-  Ensure-LSDirectory (Split-Path -Parent $LogPath)
+  Ensure-WatcherDirectory (Split-Path -Parent $LogPath)
   Push-Location $WorkingDirectory
   $oldPreference = $ErrorActionPreference
   try {
@@ -278,7 +278,7 @@ function Invoke-LSLoggedCommand {
   }
 }
 
-function Start-LSLoggedProcess {
+function Start-WatcherLoggedProcess {
   param(
     [string]$FilePath,
     [string[]]$ArgumentList,
@@ -286,9 +286,9 @@ function Start-LSLoggedProcess {
     [string]$StdoutLog,
     [string]$StderrLog
   )
-  Repair-LSProcessPathEnvironment
-  Ensure-LSDirectory (Split-Path -Parent $StdoutLog)
-  Ensure-LSDirectory (Split-Path -Parent $StderrLog)
+  Repair-WatcherProcessPathEnvironment
+  Ensure-WatcherDirectory (Split-Path -Parent $StdoutLog)
+  Ensure-WatcherDirectory (Split-Path -Parent $StderrLog)
   return Start-Process -FilePath $FilePath `
     -ArgumentList $ArgumentList `
     -WorkingDirectory $WorkingDirectory `
@@ -298,7 +298,7 @@ function Start-LSLoggedProcess {
     -PassThru
 }
 
-function Get-LSFileHashText {
+function Get-WatcherFileHashText {
   param([string[]]$Paths)
   $parts = @()
   foreach ($path in $Paths) {
@@ -316,7 +316,7 @@ function Get-LSFileHashText {
   }
 }
 
-function Confirm-LSAction {
+function Confirm-WatcherAction {
   param(
     [string]$Prompt,
     [switch]$AssumeYes
@@ -324,11 +324,11 @@ function Confirm-LSAction {
   if ($AssumeYes) {
     return $true
   }
-  $answer = Read-Host "$script:LocalScribePrefix $Prompt [y/N]"
+  $answer = Read-Host "$script:WatcherPrefix $Prompt [y/N]"
   return $answer -match "^(y|yes)$"
 }
 
-function Repair-LSProcessPathEnvironment {
+function Repair-WatcherProcessPathEnvironment {
   $pathValue = [System.Environment]::GetEnvironmentVariable("Path", "Process")
   if ([string]::IsNullOrWhiteSpace($pathValue)) {
     $pathValue = [System.Environment]::GetEnvironmentVariable("PATH", "Process")

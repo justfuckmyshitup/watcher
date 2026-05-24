@@ -1,6 +1,6 @@
 # Privacy
 
-Local Scribe is a user-controlled productivity tool, not surveillance software.
+Watcher is a user-controlled productivity tool, not surveillance software.
 
 ## Consent Model
 
@@ -69,7 +69,7 @@ The decision metadata records action, reasons, sensitivity score, and retention 
 
 Live OCR is opt-in by provider configuration. The default OCR provider is mock/no-op. The PaddleOCR provider processes frame bytes in memory by default and passes extracted text through redaction and privacy decisions before any storage.
 
-Temporary OCR files are disabled unless explicitly configured with `LOCAL_SCRIBE_OCR_ALLOW_TEMP_FILES=true`. If enabled, files are scoped to `app-data/tmp/ocr-cycle-*` and deleted in the same processing cycle.
+Temporary OCR files are disabled unless explicitly configured with `WATCHER_OCR_ALLOW_TEMP_FILES=true`. If enabled, files are scoped to `app-data/tmp/ocr-cycle-*` and deleted in the same processing cycle.
 
 Stored OCR metadata is limited to provider/profile/device, elapsed time, line count, confidence aggregate, and whether temporary files were used. Raw OCR text is not stored outside redacted snippets, and metadata-only/drop decisions do not retain snippets.
 

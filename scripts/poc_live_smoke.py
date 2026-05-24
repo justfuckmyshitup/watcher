@@ -92,7 +92,7 @@ def main() -> int:
             f"/api/sessions/{session_id}/events",
             json={
                 "active_app": "Terminal",
-                "active_window_title": "Local Scribe POC",
+                "active_window_title": "Watcher POC",
                 "capture_source": "poc-live-smoke",
                 "screenshot_base64": _synthetic_screen_png(),
                 "ocr_text": "" if not args.skip_ocr else "Restarted backend, checked health, and generated local notes.",
@@ -207,7 +207,7 @@ def main() -> int:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the real Local Scribe POC loop in-process.")
+    parser = argparse.ArgumentParser(description="Run the real Watcher POC loop in-process.")
     parser.add_argument("--ocr-provider", default="paddle")
     parser.add_argument("--ocr-profile", default="screen-fast")
     parser.add_argument("--model-provider", default="onnx-phi")
@@ -219,12 +219,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def configure_environment(args: argparse.Namespace, repo_root: Path) -> None:
-    os.environ.setdefault("LOCAL_SCRIBE_APP_DATA", str(repo_root / "app-data" / "poc-smoke"))
-    os.environ["LOCAL_SCRIBE_PROVIDER"] = "mock" if args.skip_llm else args.model_provider
-    os.environ["LOCAL_SCRIBE_OCR_PROVIDER"] = "mock" if args.skip_ocr else args.ocr_provider
-    os.environ["LOCAL_SCRIBE_OCR_PROFILE"] = args.ocr_profile
-    os.environ["LOCAL_SCRIBE_REQUIRE_GPU"] = "true" if args.require_gpu else "false"
-    os.environ["LOCAL_SCRIBE_OCR_REQUIRE_GPU"] = "true" if args.require_gpu and not args.skip_ocr else "false"
+    os.environ.setdefault("WATCHER_APP_DATA", str(repo_root / "app-data" / "poc-smoke"))
+    os.environ["WATCHER_PROVIDER"] = "mock" if args.skip_llm else args.model_provider
+    os.environ["WATCHER_OCR_PROVIDER"] = "mock" if args.skip_ocr else args.ocr_provider
+    os.environ["WATCHER_OCR_PROFILE"] = args.ocr_profile
+    os.environ["WATCHER_REQUIRE_GPU"] = "true" if args.require_gpu else "false"
+    os.environ["WATCHER_OCR_REQUIRE_GPU"] = "true" if args.require_gpu and not args.skip_ocr else "false"
     if not args.skip_llm and args.model_provider.lower() in {"onnx-phi", "onnx-phi-reasoning", "phi-onnx", "local-onnx"}:
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"

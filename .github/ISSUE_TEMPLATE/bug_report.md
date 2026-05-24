@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible Local Scribe problem
+about: Report a reproducible Watcher problem
 title: "[Bug]: "
 labels: bug
 assignees: ""

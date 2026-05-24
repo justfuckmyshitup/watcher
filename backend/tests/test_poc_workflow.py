@@ -7,10 +7,11 @@ import datetime as dt
 
 from fastapi.testclient import TestClient
 
-os.environ.setdefault("LOCAL_SCRIBE_PROVIDER", "mock")
-os.environ.setdefault("LOCAL_SCRIBE_OCR_PROVIDER", "mock")
+os.environ.setdefault("WATCHER_PROVIDER", "mock")
+os.environ.setdefault("WATCHER_OCR_PROVIDER", "mock")
 
 from backend.app.main import app
+from backend.app.capture.ephemeral import EphemeralFrameProcessor
 from backend.app.notes.generator import NoteGenerator
 from backend.app.ocr.providers import OcrResult, OcrTextLine
 from backend.app.storage.models import ContextEvent, Session
@@ -63,7 +64,7 @@ def test_session_settings_are_applied_to_ocr_and_event_metadata(monkeypatch) -> 
         f"/api/sessions/{session['id']}/events",
         json={
             "active_app": "Terminal",
-            "active_window_title": "Local Scribe POC",
+            "active_window_title": "Watcher POC",
             "capture_source": "desktop",
             "screenshot_base64": base64.b64encode(b"workflow-frame").decode("ascii"),
             "ocr_text": "",
@@ -300,6 +301,109 @@ def test_deterministic_notes_are_quality_aware_and_do_not_dump_old_boilerplate()
 
     assert "## Capture Quality" in markdown
     assert "low OCR confidence" in markdown
-    assert "This is a test sentence about marketing copy" in markdown
+    assert "Generated notes intentionally summarize session activity" in markdown
+    assert "OCR transcript omitted" in markdown
+    assert "This is a test sentence about marketing copy" not in markdown
     assert "File Edit View" not in markdown
     assert "Durable memory contains only structured metadata" not in markdown
+
+
+def test_deterministic_notes_omit_noisy_ocr_transcripts() -> None:
+    session = Session(
+        id="session-noisy-ocr-test",
+        objective="Summarize my writing work.",
+        started_at=dt.datetime(2026, 5, 3, 12, 45, tzinfo=dt.UTC),
+        ended_at=dt.datetime(2026, 5, 3, 12, 50, tzinfo=dt.UTC),
+        ocr_provider="paddle",
+        ocr_profile="screen-fast",
+        model_provider="mock",
+        privacy_mode=True,
+        privacy_strictness="strict",
+        evidence_mode=False,
+    )
+    noisy = "自 4 mw .env .enw .env Im loce error.txt .env .env .enw Need ! H1ν m√ B I 中心 2 3 4 Q 0 京 Ln 1, Col 1 Plain text Windows (CRLF) UTF-8"
+    event = ContextEvent(
+        timestamp=dt.datetime(2026, 5, 3, 12, 46, tzinfo=dt.UTC),
+        active_app="Desktop",
+        active_window_title="Screen 2",
+        redacted_text_snippet=noisy,
+        summary_snippet=noisy,
+        detected_topic="software",
+        detected_task="writing",
+        sensitivity_score=0,
+        redaction_summary=json.dumps(
+            {
+                "privacy_decision": {"action": "store_redacted"},
+                "ocr": {"average_confidence": 0.61, "elapsed_ms": 2200, "lines": []},
+            }
+        ),
+    )
+
+    markdown = NoteGenerator()._deterministic_markdown(session, [event], "Activity Log", "activity_log", "mock")
+
+    assert "software/writing" in markdown
+    assert "OCR transcript omitted" in markdown
+    assert "自 4 mw" not in markdown
+    assert "H1ν" not in markdown
+    assert "Ln 1, Col 1" not in markdown
+
+
+def test_deterministic_notes_focus_on_page_content_not_browser_or_repo_chrome() -> None:
+    session = Session(
+        id="session-focus-filter-test",
+        objective="Summarize the main work and ignore app chrome.",
+        started_at=dt.datetime(2026, 5, 3, 12, 45, tzinfo=dt.UTC),
+        ended_at=dt.datetime(2026, 5, 3, 12, 50, tzinfo=dt.UTC),
+        ocr_provider="paddle",
+        ocr_profile="screen-fast",
+        model_provider="mock",
+        privacy_mode=True,
+        privacy_strictness="strict",
+        evidence_mode=False,
+    )
+    raw_text = (
+        "Review attachment Branch details No changes Git actions GitHub CLI unavailable "
+        "Artifacts DEVELOPMENT_NOTES.md README.md BYOM_MODEL_GUIDE.md Sources Web search "
+        "The user wants session summaries to focus on main page content and ignore sidebars."
+    )
+    event = ContextEvent(
+        timestamp=dt.datetime(2026, 5, 3, 12, 46, tzinfo=dt.UTC),
+        active_app="Browser",
+        active_window_title="Review attachment",
+        redacted_text_snippet=raw_text,
+        summary_snippet=raw_text,
+        detected_topic="software",
+        detected_task="documentation",
+        sensitivity_score=0,
+        redaction_summary=json.dumps(
+            {
+                "privacy_decision": {"action": "store_redacted"},
+                "ocr": {"average_confidence": 0.91, "elapsed_ms": 500, "lines": []},
+            }
+        ),
+    )
+
+    markdown = NoteGenerator()._deterministic_markdown(session, [event], "Activity Log", "activity_log", "mock")
+
+    assert "Readable keyword hints" in markdown
+    assert "session" in markdown
+    assert "summaries" in markdown
+    assert "Review attachment" not in markdown
+    assert "Branch details" not in markdown
+    assert "Git actions" not in markdown
+    assert "Artifacts" not in markdown
+    assert "DEVELOPMENT_NOTES" not in markdown
+    assert "Web search" not in markdown
+
+
+def test_ephemeral_summary_snippet_removes_ui_chrome_and_file_lists() -> None:
+    summary = EphemeralFrameProcessor._summary_snippet(
+        "Review attachment Branch details Git actions Artifacts README.md SECURITY.md "
+        "The useful work is deciding how generated notes should summarize the session."
+    )
+
+    assert "Branch details" not in summary
+    assert "Git actions" not in summary
+    assert "Artifacts" not in summary
+    assert "README.md" not in summary
+    assert "useful work" in summary

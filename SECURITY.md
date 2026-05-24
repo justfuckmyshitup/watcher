@@ -1,6 +1,6 @@
 # Security Policy
 
-Local Scribe handles screen-derived context, so security reports are taken seriously.
+Watcher handles screen-derived context, so security reports are taken seriously.
 
 ## Supported Status
 

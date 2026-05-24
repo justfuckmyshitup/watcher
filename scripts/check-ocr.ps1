@@ -11,10 +11,10 @@ param(
 . "$PSScriptRoot\launcher-lib.ps1"
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Get-LSRepoRoot
+$repoRoot = Get-WatcherRepoRoot
 Set-Location $repoRoot
 
-function Resolve-LSPythonForOcr {
+function Resolve-WatcherPythonForOcr {
   if ($PythonPath) {
     return $PythonPath
   }
@@ -22,22 +22,22 @@ function Resolve-LSPythonForOcr {
   if (Test-Path -LiteralPath $venvPython) {
     return $venvPython
   }
-  return Get-LSCommand @("python.exe", "python")
+  return Get-WatcherCommand @("python.exe", "python")
 }
 
-$python = Resolve-LSPythonForOcr
+$python = Resolve-WatcherPythonForOcr
 if (-not $python) {
-  Write-LSErrorMessage "Python was not found. Create .venv or install Python, then rerun this script."
+  Write-WatcherErrorMessage "Python was not found. Create .venv or install Python, then rerun this script."
   exit 1
 }
 
 $ocrRequiresGpu = $RequireGpu -and -not $AllowCpuFallback
-$env:LOCAL_SCRIBE_OCR_PROVIDER = $Provider
-$env:LOCAL_SCRIBE_OCR_PROFILE = $Profile
-$env:LOCAL_SCRIBE_OCR_REQUIRE_GPU = if ($ocrRequiresGpu) { "true" } else { "false" }
+$env:WATCHER_OCR_PROVIDER = $Provider
+$env:WATCHER_OCR_PROFILE = $Profile
+$env:WATCHER_OCR_REQUIRE_GPU = if ($ocrRequiresGpu) { "true" } else { "false" }
 
 $probeDir = Join-Path $repoRoot "app-data\tmp\ocr-probe"
-Ensure-LSDirectory $probeDir
+Ensure-WatcherDirectory $probeDir
 $probePath = Join-Path $probeDir "ocr-provider-probe-$([guid]::NewGuid().ToString('N')).py"
 $code = @'
 import json
@@ -89,19 +89,19 @@ try {
 if ($Json) {
   $diagnostics | ConvertTo-Json -Depth 10
 } else {
-  Write-LSStatus "OCR provider: $($diagnostics.provider)"
-  Write-LSStatus "OCR profile: $($diagnostics.profile)"
-  Write-LSStatus "OCR available: $($diagnostics.available)"
+  Write-WatcherStatus "OCR provider: $($diagnostics.provider)"
+  Write-WatcherStatus "OCR profile: $($diagnostics.profile)"
+  Write-WatcherStatus "OCR available: $($diagnostics.available)"
   if ($diagnostics.device) {
-    Write-LSStatus "OCR device: $($diagnostics.device)"
+    Write-WatcherStatus "OCR device: $($diagnostics.device)"
   }
   if ($diagnostics.reasons -and $diagnostics.reasons.Count -gt 0) {
     foreach ($reason in $diagnostics.reasons) {
-      Write-LSWarn "OCR readiness: $reason"
+      Write-WatcherWarn "OCR readiness: $reason"
     }
   }
   if ($diagnostics.provider -eq "paddle" -and -not $diagnostics.available) {
-    Write-LSStatus "Manual install guidance:"
+    Write-WatcherStatus "Manual install guidance:"
     Write-Host "  python -m pip install paddleocr"
     Write-Host "  python -m pip install paddlepaddle-gpu==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/"
     Write-Host "  Use the cu118 index instead if your CUDA/driver stack requires CUDA 11.8."
@@ -112,9 +112,9 @@ $providerRequiresReadiness = $Provider.ToLowerInvariant() -notin @("mock", "none
 if ($providerRequiresReadiness -and -not $diagnostics.available) {
   if (-not $Json) {
     if ($ocrRequiresGpu) {
-      Write-LSErrorMessage "GPU OCR is required but not ready. Install PaddleOCR plus a compatible paddlepaddle-gpu wheel, then rerun this check."
+      Write-WatcherErrorMessage "GPU OCR is required but not ready. Install PaddleOCR plus a compatible paddlepaddle-gpu wheel, then rerun this check."
     } else {
-      Write-LSErrorMessage "OCR provider '$Provider' is not ready. Install required OCR packages or use -Provider mock."
+      Write-WatcherErrorMessage "OCR provider '$Provider' is not ready. Install required OCR packages or use -Provider mock."
     }
   }
   exit 1

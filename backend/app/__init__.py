@@ -1,2 +1,2 @@
-"""Local Scribe backend package."""
+"""Watcher backend package."""
 

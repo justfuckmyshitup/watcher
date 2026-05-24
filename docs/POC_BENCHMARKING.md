@@ -1,6 +1,6 @@
 # POC Benchmarking
 
-Phase 5 proves whether Local Scribe is ready for a real RTX 3060-class demo.
+Phase 5 proves whether Watcher is ready for a real RTX 3060-class demo.
 
 Run the benchmark:
 

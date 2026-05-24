@@ -1,2 +1,2 @@
-"""Storage helpers for Local Scribe."""
+"""Storage helpers for Watcher."""
 

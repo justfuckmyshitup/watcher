@@ -15,5 +15,5 @@ macOS requires Screen Recording permission for the desktop shell. Start capture 
 
 ## Verify Acceleration
 
-Use the selected runtime's diagnostics and system Activity Monitor GPU/Neural Engine indicators where available. The Local Scribe UI should show mock mode, CPU fallback, or local runtime status clearly.
+Use the selected runtime's diagnostics and system Activity Monitor GPU/Neural Engine indicators where available. The Watcher UI should show mock mode, CPU fallback, or local runtime status clearly.
 

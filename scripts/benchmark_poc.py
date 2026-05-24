@@ -35,7 +35,7 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     settings.require_gpu = bool(args.require_gpu)
-    os.environ["LOCAL_SCRIBE_REQUIRE_GPU"] = "true" if args.require_gpu else "false"
+    os.environ["WATCHER_REQUIRE_GPU"] = "true" if args.require_gpu else "false"
     if args.offline:
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -97,22 +97,22 @@ def main() -> int:
     if args.json:
         print(json.dumps(report, indent=2, ensure_ascii=True))
     else:
-        print(f"[Local Scribe] Benchmark JSON: {json_path}")
-        print(f"[Local Scribe] Benchmark report: {md_path}")
-        print(f"[Local Scribe] Acceptance passed: {report['acceptance']['passed']}")
+        print(f"[Watcher] Benchmark JSON: {json_path}")
+        print(f"[Watcher] Benchmark report: {md_path}")
+        print(f"[Watcher] Acceptance passed: {report['acceptance']['passed']}")
         for item in report["acceptance"]["failures"]:
-            print(f"[Local Scribe] BLOCKED: {item}")
+            print(f"[Watcher] BLOCKED: {item}")
         for item in report["acceptance"]["warnings"]:
-            print(f"[Local Scribe] WARNING: {item}")
+            print(f"[Watcher] WARNING: {item}")
 
     return 0 if report["acceptance"]["passed"] or args.allow_incomplete else 1
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Benchmark and harden the Local Scribe POC runtime.")
-    parser.add_argument("--ocr-provider", default=os.getenv("LOCAL_SCRIBE_OCR_PROVIDER", "mock"))
-    parser.add_argument("--ocr-profile", default=os.getenv("LOCAL_SCRIBE_OCR_PROFILE", "screen-fast"))
-    parser.add_argument("--model-provider", default=os.getenv("LOCAL_SCRIBE_PROVIDER", "mock"))
+    parser = argparse.ArgumentParser(description="Benchmark and harden the Watcher POC runtime.")
+    parser.add_argument("--ocr-provider", default=os.getenv("WATCHER_OCR_PROVIDER", "mock"))
+    parser.add_argument("--ocr-profile", default=os.getenv("WATCHER_OCR_PROFILE", "screen-fast"))
+    parser.add_argument("--model-provider", default=os.getenv("WATCHER_PROVIDER", "mock"))
     parser.add_argument("--iterations", type=int, default=3)
     parser.add_argument("--require-gpu", action="store_true")
     parser.add_argument("--offline", action="store_true")
@@ -125,9 +125,9 @@ def parse_args() -> argparse.Namespace:
 
 
 def benchmark_ocr(provider_name: str, profile: str, iterations: int, require_gpu: bool) -> dict[str, Any]:
-    os.environ["LOCAL_SCRIBE_OCR_PROVIDER"] = provider_name
-    os.environ["LOCAL_SCRIBE_OCR_PROFILE"] = profile
-    os.environ["LOCAL_SCRIBE_OCR_REQUIRE_GPU"] = "true" if require_gpu else "false"
+    os.environ["WATCHER_OCR_PROVIDER"] = provider_name
+    os.environ["WATCHER_OCR_PROFILE"] = profile
+    os.environ["WATCHER_OCR_REQUIRE_GPU"] = "true" if require_gpu else "false"
     provider = get_ocr_provider(provider_name, profile=profile, require_gpu=require_gpu)
     diagnostics = provider.diagnostics()
     result: dict[str, Any] = {
@@ -258,7 +258,7 @@ def privacy_regression() -> dict[str, Any]:
         {
             "name": "safe_store",
             "app": "Terminal",
-            "title": "Local Scribe",
+            "title": "Watcher",
             "text": "Restarted the backend service and generated notes.",
             "must_not_contain": [],
             "expected_action": "store_redacted",
@@ -335,7 +335,7 @@ def markdown_report(report: dict[str, Any]) -> str:
     gpu = report["gpu_after"]
     primary_gpu = gpu.get("primary_gpu") or {}
     lines = [
-        "# Local Scribe POC Benchmark",
+        "# Watcher POC Benchmark",
         "",
         f"- Started: `{report['started_at']}`",
         f"- Completed: `{report['completed_at']}`",

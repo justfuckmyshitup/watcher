@@ -1,6 +1,6 @@
 # Code of Conduct
 
-Local Scribe should be a practical, respectful project for people exploring local-first AI workflows.
+Watcher should be a practical, respectful project for people exploring local-first AI workflows.
 
 Expected behavior:
 

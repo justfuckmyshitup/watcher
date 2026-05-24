@@ -2,7 +2,7 @@ const { app, BrowserWindow, Menu, Tray, nativeImage, shell, ipcMain, desktopCapt
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 
-const API_PORT = process.env.LOCAL_SCRIBE_PORT || "8765";
+const API_PORT = process.env.WATCHER_PORT || "8765";
 const API_BASE = `http://127.0.0.1:${API_PORT}/api`;
 let mainWindow = null;
 let tray = null;
@@ -10,17 +10,17 @@ let backendProcess = null;
 let selectedCaptureSourceId = null;
 
 function startBackend() {
-  if (process.env.LOCAL_SCRIBE_SKIP_BACKEND_START === "true") {
+  if (process.env.WATCHER_SKIP_BACKEND_START === "true") {
     return;
   }
   const repoRoot = path.resolve(__dirname, "../../..");
-  const python = process.env.LOCAL_SCRIBE_PYTHON || "python";
+  const python = process.env.WATCHER_PYTHON || "python";
   backendProcess = spawn(
     python,
     ["-m", "uvicorn", "backend.app.main:app", "--host", "127.0.0.1", "--port", API_PORT],
     {
       cwd: repoRoot,
-      env: { ...process.env, LOCAL_SCRIBE_HOST: "127.0.0.1", LOCAL_SCRIBE_PORT: API_PORT },
+      env: { ...process.env, WATCHER_HOST: "127.0.0.1", WATCHER_PORT: API_PORT },
       stdio: "ignore",
       windowsHide: true
     }
@@ -33,7 +33,7 @@ function createWindow() {
     height: 920,
     minWidth: 1080,
     minHeight: 720,
-    title: "Local Scribe",
+    title: "Watcher",
     backgroundColor: "#f6f8f8",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -61,10 +61,10 @@ function createWindow() {
 function createTray() {
   const icon = nativeImage.createEmpty();
   tray = new Tray(icon);
-  tray.setToolTip("Local Scribe");
+  tray.setToolTip("Watcher");
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: "Show Local Scribe", click: () => mainWindow?.show() },
+      { label: "Show Watcher", click: () => mainWindow?.show() },
       { label: "Backend: localhost only", enabled: false },
       { type: "separator" },
       { label: "Quit", click: () => app.quit() }
@@ -86,7 +86,7 @@ function registerIpcHandlers() {
     }
   }, { useSystemPicker: false });
 
-  ipcMain.handle("local-scribe:capture-sources", async () => {
+  ipcMain.handle("watcher:capture-sources", async () => {
     const sources = await listCaptureSources();
     return sources.map((source) => ({
       id: source.id,
@@ -94,7 +94,7 @@ function registerIpcHandlers() {
     }));
   });
 
-  ipcMain.handle("local-scribe:set-capture-source", async (_event, sourceId) => {
+  ipcMain.handle("watcher:set-capture-source", async (_event, sourceId) => {
     selectedCaptureSourceId = typeof sourceId === "string" && sourceId.trim() ? sourceId : null;
     return { ok: true };
   });

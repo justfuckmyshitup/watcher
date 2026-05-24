@@ -3,9 +3,9 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import json
-import re
 from collections import Counter
 
+from backend.app.context.focus_filter import clean_focus_text, contains_ocr_dump, looks_noisy, readable_terms
 from sqlalchemy.orm import Session as DbSession
 
 from backend.app.context_lattice.service import context_lattice_service
@@ -170,7 +170,10 @@ class NoteGenerator:
 Rules:
 - Do not claim access to raw screenshots.
 - Mention when OCR/context is incomplete.
-- Do not dump raw OCR. Synthesize concise observations from the event excerpts.
+- Do not dump, reconstruct, or quote raw OCR transcripts.
+- Do not list UI chrome, OCR artifacts, random symbols, or special-character noise.
+- Synthesize concise observations from event metadata and any readable keyword hints.
+- Do not include verbatim excerpts longer than 10 words.
 - Treat low-confidence OCR as uncertain and say so.
 - Include redaction notices.
 - Preserve [REDACTED_*] placeholders exactly and do not infer hidden values.
@@ -220,6 +223,8 @@ Redacted structured events:
             "mock ai mode active",
         )
         if any(phrase in lowered for phrase in rejected_phrases):
+            return False
+        if contains_ocr_dump(cleaned):
             return False
         return cleaned.startswith("#") or "\n## " in cleaned
 
@@ -273,56 +278,38 @@ def _event_ocr_elapsed_ms(event: ContextEvent) -> float | None:
 
 def _event_excerpt(event: ContextEvent, limit: int = 280) -> str:
     text = event.summary_snippet or event.redacted_text_snippet or ""
-    cleaned = _clean_excerpt(text)
-    if len(cleaned) <= limit:
-        return cleaned
-    return f"{cleaned[: limit - 3].rstrip()}..."
+    return _clean_excerpt(text, limit=limit)
 
 
-def _clean_excerpt(text: str) -> str:
-    cleaned = " ".join((text or "").split())
-    replacements = (
-        r"\bFile\s+Edit\s+View(?:\s+Window\s+Help)?\b",
-        r"\bLn\s+\d+\s*,\s*Col\s+\d+\b",
-        r"\b\d+\s+characters?\b",
-        r"\bPlain\s+text\b",
-        r"\bWindows\s+\(CRLF\)",
-        r"\bUTF-?8\b",
-        r"\b\d+\s*%",
-        r"\bShow\s+more\b",
-        r"\bReview\s+attachment\b",
-    )
-    for pattern in replacements:
-        cleaned = re.sub(pattern, " ", cleaned, flags=re.I)
-    cleaned = re.sub(r"(?:\s*\.env\b){3,}", " .env", cleaned, flags=re.I)
-    cleaned = re.sub(r"\b([A-Za-z][A-Za-z0-9_.-]{1,24})(?:\s+\1\b){3,}", r"\1", cleaned)
-    cleaned = re.sub(r"\s+", " ", cleaned)
-    return cleaned.strip(" -:;,.")
+def _clean_excerpt(text: str, limit: int | None = None) -> str:
+    return clean_focus_text(text, strip_file_references=True, limit=limit)
 
 
 def _timeline_entries(events: list[ContextEvent]) -> list[str]:
     entries: list[str] = []
-    previous_excerpt = ""
     for event in events:
-        excerpt = _event_excerpt(event)
-        if not excerpt:
-            continue
-        if excerpt == previous_excerpt:
-            continue
-        previous_excerpt = excerpt
         timestamp = event.timestamp.strftime("%H:%M:%S") if event.timestamp else "time unknown"
-        window = event.active_window_title or "Unknown window"
+        window = _display_window_title(event.active_window_title)
         topic_task = f"{event.detected_topic}/{event.detected_task}"
+        excerpt = _event_excerpt(event)
         quality = _ocr_quality_label(_event_ocr_confidence(event), excerpt)
         elapsed = _event_ocr_elapsed_ms(event)
         elapsed_text = f", {round(elapsed)} ms" if elapsed is not None else ""
-        entries.append(f"- {timestamp} - {event.active_app or 'Unknown app'} / {window}: {excerpt} ({topic_task}; {quality}{elapsed_text})")
+        entries.append(
+            f"- {timestamp} - {event.active_app or 'Unknown app'} / {window}: "
+            f"observed {topic_task.replace('_', ' ')} activity ({quality}{elapsed_text}). {_event_text_hint(event)}"
+        )
         if len(entries) >= 18:
             remaining = len(events) - 18
             if remaining > 0:
                 entries.append(f"- {remaining} additional event(s) were captured and included in rollups.")
             break
     return entries or ["- No redacted OCR text was available for the stored context events."]
+
+
+def _display_window_title(title: str | None) -> str:
+    cleaned = clean_focus_text(title or "", strip_file_references=True, limit=60)
+    return cleaned or "focused window"
 
 
 def _capture_quality_text(
@@ -339,7 +326,7 @@ def _capture_quality_text(
     else:
         lines.append(f"- Average OCR confidence: {round(average_confidence * 100)}%.")
     if low_confidence_count:
-        lines.append(f"- {low_confidence_count} event(s) had low OCR confidence; treat those excerpts as approximate.")
+        lines.append(f"- {low_confidence_count} event(s) had low OCR confidence; transcript text was not used for exact notes.")
     if omitted_events:
         lines.append(f"- {omitted_events} event(s) were omitted or reduced to metadata by privacy policy.")
     return lines
@@ -349,14 +336,18 @@ def _useful_detail_lines(events: list[ContextEvent], topics: Counter[str], tasks
     if not events:
         return ["- No observed activity was available. Start a longer capture and keep the target screen visible."]
     lines: list[str] = []
+    lines.append("- Generated notes intentionally summarize session activity instead of dumping OCR transcripts.")
     if topics:
         topic, topic_count = topics.most_common(1)[0]
         lines.append(f"- Main observed topic: {topic.replace('_', ' ')} ({topic_count} event(s)).")
     if tasks:
         task, task_count = tasks.most_common(1)[0]
         lines.append(f"- Main observed task type: {task.replace('_', ' ')} ({task_count} event(s)).")
-    for excerpt in _unique_excerpts(events, limit=3):
-        lines.append(f"- Notable captured context: {excerpt}")
+    terms = _recurring_readable_terms(events)
+    if terms:
+        lines.append(f"- Recurring readable terms: {', '.join(terms)}.")
+    else:
+        lines.append("- No clean recurring text terms passed the note-quality gate; OCR transcript text was omitted.")
     if len(events) < 3:
         lines.append("- The session has very few events, so time split and sequence inference are limited.")
     return lines
@@ -365,7 +356,7 @@ def _useful_detail_lines(events: list[ContextEvent], topics: Counter[str], tasks
 def _follow_up_lines(events: list[ContextEvent], average_confidence: float | None, low_confidence_count: int) -> list[str]:
     if not events:
         return ["- Capture again with the target application selected until at least a few events are stored."]
-    lines = ["- Review the observed timeline for OCR mistakes before sharing or exporting."]
+    lines = ["- Review the source session in the app if exact wording matters; exported notes intentionally avoid OCR transcript dumps."]
     if low_confidence_count or (average_confidence is not None and average_confidence < 0.78):
         lines.append("- If this text matters, rerun with `screen-accurate` OCR or increase the target app font size.")
     if len(events) < 5:
@@ -382,39 +373,40 @@ def _open_question_lines(events: list[ContextEvent], omitted_events: int) -> lis
     return lines
 
 
-def _unique_excerpts(events: list[ContextEvent], limit: int) -> list[str]:
-    seen: set[str] = set()
-    excerpts: list[str] = []
-    for event in events:
-        excerpt = _event_excerpt(event, limit=220)
-        if not excerpt or excerpt in seen:
-            continue
-        seen.add(excerpt)
-        excerpts.append(excerpt)
-        if len(excerpts) >= limit:
-            break
-    return excerpts
-
-
 def _ocr_quality_label(confidence: float | None, excerpt: str) -> str:
     if confidence is None:
-        return "OCR confidence unknown" + (", noisy text" if _looks_noisy(excerpt) else "")
+        return "OCR confidence unknown" + (", noisy text" if looks_noisy(excerpt) else "")
     label = f"OCR {round(confidence * 100)}%"
-    if confidence < 0.72 or _looks_noisy(excerpt):
+    if confidence < 0.72 or looks_noisy(excerpt):
         return f"{label}, noisy text"
     return label
 
 
-def _looks_noisy(text: str) -> bool:
-    if len(text) < 20:
-        return False
-    ascii_letters = sum(1 for char in text if ("a" <= char.lower() <= "z"))
-    digits = sum(1 for char in text if char.isdigit())
-    spaces = sum(1 for char in text if char.isspace())
-    punctuation = sum(1 for char in text if char in ".,:;!?/_-[]()'\"`")
-    signal = ascii_letters + digits + spaces + punctuation
-    unusual_ratio = 1 - (signal / max(len(text), 1))
-    return unusual_ratio > 0.22
+def _event_text_hint(event: ContextEvent) -> str:
+    terms = _event_readable_terms(event, limit=5)
+    if terms:
+        return f"Readable keyword hints: {', '.join(terms)}."
+    excerpt = _event_excerpt(event)
+    if excerpt:
+        return "OCR transcript omitted from notes because it was noisy, low-confidence, or too transcript-like."
+    return "No readable text hint was available."
+
+
+def _event_readable_terms(event: ContextEvent, limit: int = 8) -> list[str]:
+    confidence = _event_ocr_confidence(event)
+    text = event.summary_snippet or event.redacted_text_snippet or ""
+    if not text:
+        return []
+    if confidence is not None and confidence < 0.78:
+        return []
+    return readable_terms(text, limit=limit)
+
+
+def _recurring_readable_terms(events: list[ContextEvent], limit: int = 8) -> list[str]:
+    counts: Counter[str] = Counter()
+    for event in events:
+        counts.update(_event_readable_terms(event, limit=12))
+    return [word for word, _count in counts.most_common(limit)]
 
 
 def _confidence_level(events: list[ContextEvent], average_confidence: float | None, low_confidence_count: int) -> str:
@@ -442,6 +434,7 @@ def _event_prompt_line(event: ContextEvent) -> str:
     confidence = _event_ocr_confidence(event)
     quality = _ocr_quality_label(confidence, excerpt)
     return (
-        f"- [{timestamp}] {event.active_app} / {event.active_window_title}: "
-        f"{excerpt} ({event.detected_topic}/{event.detected_task}; {quality})"
+        f"- [{timestamp}] {event.active_app} / {_display_window_title(event.active_window_title)}: "
+        f"topic={event.detected_topic}; task={event.detected_task}; quality={quality}; "
+        f"{_event_text_hint(event)}"
     )

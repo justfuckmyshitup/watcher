@@ -9,11 +9,11 @@ param(
 . "$PSScriptRoot\launcher-lib.ps1"
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Get-LSRepoRoot
+$repoRoot = Get-WatcherRepoRoot
 Set-Location $repoRoot
 
 if ($Profile -ne "poc") {
-  Write-LSErrorMessage "Unknown model profile '$Profile'. Supported profile: poc."
+  Write-WatcherErrorMessage "Unknown model profile '$Profile'. Supported profile: poc."
   exit 1
 }
 
@@ -24,44 +24,44 @@ $manifestPath = Join-Path $modelsRoot "manifest.json"
 $repoId = "microsoft/Phi-4-mini-reasoning-onnx"
 $include = "gpu/*"
 
-Ensure-LSDirectory $modelsRoot
-Ensure-LSDirectory (Split-Path -Parent $localPath)
+Ensure-WatcherDirectory $modelsRoot
+Ensure-WatcherDirectory (Split-Path -Parent $localPath)
 
 if ((Test-Path -LiteralPath $selectedPath) -and -not $Force -and -not $DryRun) {
-  Write-LSStatus "Model path already exists: $selectedPath"
-  Write-LSStatus "Use -Force to re-download."
+  Write-WatcherStatus "Model path already exists: $selectedPath"
+  Write-WatcherStatus "Use -Force to re-download."
   & "$PSScriptRoot\check-models.ps1" -Profile $Profile
   exit $LASTEXITCODE
 }
 
-Write-LSStatus "Preparing Hugging Face model download..."
-Write-LSStatus "Repo: $repoId"
-Write-LSStatus "Include: $include"
-Write-LSStatus "Destination: $localPath"
+Write-WatcherStatus "Preparing Hugging Face model download..."
+Write-WatcherStatus "Repo: $repoId"
+Write-WatcherStatus "Include: $include"
+Write-WatcherStatus "Destination: $localPath"
 
-$hf = Get-LSCommand @("hf.exe", "hf")
+$hf = Get-WatcherCommand @("hf.exe", "hf")
 if ($hf) {
   $args = @("download", $repoId, "--revision", $Revision, "--include", $include, "--local-dir", $localPath)
   if ($DryRun) {
     $args += "--dry-run"
   }
-  Write-LSStatus "Using Hugging Face hf CLI..."
+  Write-WatcherStatus "Using Hugging Face hf CLI..."
   & $hf @args
   if ($LASTEXITCODE -ne 0) {
-    Write-LSErrorMessage "hf download failed."
+    Write-WatcherErrorMessage "hf download failed."
     exit $LASTEXITCODE
   }
 } else {
   $python = Join-Path $repoRoot ".venv\Scripts\python.exe"
   if (-not (Test-Path -LiteralPath $python)) {
-    $python = Get-LSCommand @("python.exe", "python")
+    $python = Get-WatcherCommand @("python.exe", "python")
   }
   if (-not $python) {
-    Write-LSErrorMessage "Neither hf CLI nor Python was found. Install Hugging Face CLI or create .venv first."
+    Write-WatcherErrorMessage "Neither hf CLI nor Python was found. Install Hugging Face CLI or create .venv first."
     exit 1
   }
   if ($DryRun) {
-    Write-LSWarn "hf CLI is not installed, so -DryRun cannot query remote files through hf."
+    Write-WatcherWarn "hf CLI is not installed, so -DryRun cannot query remote files through hf."
     Write-Host "Install with: python -m pip install -U huggingface_hub[hf_xet]"
     exit 0
   }
@@ -89,14 +89,14 @@ snapshot_download(
 )
 '@
   $probeDir = Join-Path $repoRoot "app-data\tmp\model-download"
-  Ensure-LSDirectory $probeDir
+  Ensure-WatcherDirectory $probeDir
   $scriptPath = Join-Path $probeDir "hf-download-$([guid]::NewGuid().ToString('N')).py"
   try {
     $code | Set-Content -LiteralPath $scriptPath -Encoding UTF8
-    Write-LSStatus "Using huggingface_hub.snapshot_download fallback..."
+    Write-WatcherStatus "Using huggingface_hub.snapshot_download fallback..."
     & $python $scriptPath $repoId $Revision $include $localPath
     if ($LASTEXITCODE -ne 0) {
-      Write-LSErrorMessage "huggingface_hub download failed."
+      Write-WatcherErrorMessage "huggingface_hub download failed."
       exit $LASTEXITCODE
     }
   } finally {
@@ -135,6 +135,6 @@ $manifest = [ordered]@{
 }
 
 ($manifest | ConvertTo-Json -Depth 8) | Set-Content -LiteralPath $manifestPath -Encoding UTF8
-Write-LSStatus "Wrote model manifest: $manifestPath"
+Write-WatcherStatus "Wrote model manifest: $manifestPath"
 & "$PSScriptRoot\check-models.ps1" -Profile $Profile
 exit $LASTEXITCODE

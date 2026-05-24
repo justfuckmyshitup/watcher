@@ -11,10 +11,10 @@ param(
 . "$PSScriptRoot\launcher-lib.ps1"
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Get-LSRepoRoot
+$repoRoot = Get-WatcherRepoRoot
 Set-Location $repoRoot
 
-function ConvertTo-LSInt {
+function ConvertTo-WatcherInt {
   param([string]$Value)
   if ([string]::IsNullOrWhiteSpace($Value)) {
     return $null
@@ -26,9 +26,9 @@ function ConvertTo-LSInt {
   return [int]$match.Value
 }
 
-function Invoke-LSNvidiaQuery {
+function Invoke-WatcherNvidiaQuery {
   param([string[]]$Fields)
-  $nvidia = Get-LSCommand @("nvidia-smi.exe", "nvidia-smi")
+  $nvidia = Get-WatcherCommand @("nvidia-smi.exe", "nvidia-smi")
   if (-not $nvidia) {
     return $null
   }
@@ -40,12 +40,12 @@ function Invoke-LSNvidiaQuery {
   return @($output)
 }
 
-function Get-LSNvidiaGpus {
+function Get-WatcherNvidiaGpus {
   $fields = @("name", "memory.total", "memory.free", "driver_version", "compute_cap")
-  $rows = Invoke-LSNvidiaQuery -Fields $fields
+  $rows = Invoke-WatcherNvidiaQuery -Fields $fields
   if (-not $rows) {
     $fields = @("name", "memory.total", "memory.free", "driver_version")
-    $rows = Invoke-LSNvidiaQuery -Fields $fields
+    $rows = Invoke-WatcherNvidiaQuery -Fields $fields
   }
   if (-not $rows) {
     return @()
@@ -60,8 +60,8 @@ function Get-LSNvidiaGpus {
       $value = if ($i -lt $parts.Count) { $parts[$i] } else { "" }
       switch ($field) {
         "name" { $gpu.name = $value }
-        "memory.total" { $gpu.memory_total_mb = ConvertTo-LSInt $value }
-        "memory.free" { $gpu.memory_free_mb = ConvertTo-LSInt $value }
+        "memory.total" { $gpu.memory_total_mb = ConvertTo-WatcherInt $value }
+        "memory.free" { $gpu.memory_free_mb = ConvertTo-WatcherInt $value }
         "driver_version" { $gpu.driver_version = $value }
         "compute_cap" { $gpu.compute_capability = if ($value) { $value } else { $null } }
       }
@@ -71,7 +71,7 @@ function Get-LSNvidiaGpus {
   return $gpus
 }
 
-function Resolve-LSPython {
+function Resolve-WatcherPython {
   if ($PythonPath) {
     return $PythonPath
   }
@@ -79,10 +79,10 @@ function Resolve-LSPython {
   if (Test-Path -LiteralPath $venvPython) {
     return $venvPython
   }
-  return Get-LSCommand @("python.exe", "python")
+  return Get-WatcherCommand @("python.exe", "python")
 }
 
-function Get-LSPythonGpuPackages {
+function Get-WatcherPythonGpuPackages {
   if ($SkipPackageProbe) {
     return [ordered]@{
       probe_skipped = $true
@@ -91,7 +91,7 @@ function Get-LSPythonGpuPackages {
     }
   }
 
-  $python = Resolve-LSPython
+  $python = Resolve-WatcherPython
   if (-not $python) {
     return [ordered]@{
       probe_error = "Python was not found."
@@ -143,7 +143,7 @@ print(json.dumps(data))
 '@
 
   $probeDir = Join-Path $repoRoot "app-data\tmp\gpu-probe"
-  Ensure-LSDirectory $probeDir
+  Ensure-WatcherDirectory $probeDir
   $probePath = Join-Path $probeDir "gpu-package-probe-$([guid]::NewGuid().ToString('N')).py"
   try {
     $code | Set-Content -LiteralPath $probePath -Encoding UTF8
@@ -191,7 +191,7 @@ print(json.dumps(data))
   }
 }
 
-function Add-LSUnique {
+function Add-WatcherUnique {
   param(
     [System.Collections.ArrayList]$List,
     [string]$Value
@@ -201,9 +201,9 @@ function Add-LSUnique {
   }
 }
 
-$gpus = @(Get-LSNvidiaGpus)
+$gpus = @(Get-WatcherNvidiaGpus)
 $hardwareReady = $gpus.Count -gt 0
-$packages = Get-LSPythonGpuPackages
+$packages = Get-WatcherPythonGpuPackages
 $cudaReady = [bool]$packages.onnxruntime_cuda_provider_available
 $paddleReady = [bool]$packages.paddle_gpu_available
 $providerReady = $cudaReady -or $paddleReady
@@ -218,17 +218,17 @@ if (-not $hardwareReady) {
   } else {
     [void]$warnings.Add($message)
   }
-  Add-LSUnique -List $actions -Value "Install or update the NVIDIA driver, then rerun .\scripts\check-gpu.ps1."
+  Add-WatcherUnique -List $actions -Value "Install or update the NVIDIA driver, then rerun .\scripts\check-gpu.ps1."
 }
 
 if ($RequireCudaProvider -and -not $cudaReady) {
   [void]$errors.Add("ONNX Runtime CUDA execution provider is not available.")
-  Add-LSUnique -List $actions -Value "Install a CUDA-capable ONNX Runtime GenAI profile after confirming CUDA/cuDNN compatibility."
+  Add-WatcherUnique -List $actions -Value "Install a CUDA-capable ONNX Runtime GenAI profile after confirming CUDA/cuDNN compatibility."
 }
 
 if ($RequirePaddleGpu -and -not $paddleReady) {
   [void]$errors.Add("PaddlePaddle GPU support is not available.")
-  Add-LSUnique -List $actions -Value "Install the PaddlePaddle GPU package that matches the local NVIDIA driver/CUDA profile."
+  Add-WatcherUnique -List $actions -Value "Install the PaddlePaddle GPU package that matches the local NVIDIA driver/CUDA profile."
 }
 
 if ($hardwareReady -and -not $providerReady -and -not $SkipPackageProbe) {
@@ -256,7 +256,7 @@ $report = [ordered]@{
   hardware_ready = $hardwareReady
   provider_ready = $providerReady
   gpu_provider = $gpuProvider
-  nvidia_smi_available = [bool](Get-LSCommand @("nvidia-smi.exe", "nvidia-smi"))
+  nvidia_smi_available = [bool](Get-WatcherCommand @("nvidia-smi.exe", "nvidia-smi"))
   gpus = $gpus
   primary_gpu = $primaryGpu
   packages = $packages
@@ -269,25 +269,25 @@ $report = [ordered]@{
 if ($Json) {
   $report | ConvertTo-Json -Depth 8
 } else {
-  Write-LSStatus "Checking NVIDIA GPU..."
+  Write-WatcherStatus "Checking NVIDIA GPU..."
   if ($hardwareReady) {
     $primary = $gpus[0]
-    Write-LSStatus "GPU found: $($primary.name), driver $($primary.driver_version), VRAM $($primary.memory_free_mb)/$($primary.memory_total_mb) MB free."
+    Write-WatcherStatus "GPU found: $($primary.name), driver $($primary.driver_version), VRAM $($primary.memory_free_mb)/$($primary.memory_total_mb) MB free."
   } else {
-    Write-LSWarn "No NVIDIA GPU found via nvidia-smi."
+    Write-WatcherWarn "No NVIDIA GPU found via nvidia-smi."
   }
   if (-not $SkipPackageProbe) {
-    Write-LSStatus "ONNX Runtime CUDA provider: $(if ($cudaReady) { 'ready' } else { 'not ready' })"
-    Write-LSStatus "PaddlePaddle GPU: $(if ($paddleReady) { 'ready' } else { 'not ready' })"
+    Write-WatcherStatus "ONNX Runtime CUDA provider: $(if ($cudaReady) { 'ready' } else { 'not ready' })"
+    Write-WatcherStatus "PaddlePaddle GPU: $(if ($paddleReady) { 'ready' } else { 'not ready' })"
   }
   foreach ($warning in $warnings) {
-    Write-LSWarn $warning
+    Write-WatcherWarn $warning
   }
   foreach ($errorItem in $errors) {
-    Write-LSErrorMessage $errorItem
+    Write-WatcherErrorMessage $errorItem
   }
   if ($actions.Count -gt 0) {
-    Write-LSStatus "Recommended action:"
+    Write-WatcherStatus "Recommended action:"
     foreach ($action in $actions) {
       Write-Host "  - $action"
     }

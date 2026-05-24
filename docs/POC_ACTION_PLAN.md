@@ -1,4 +1,4 @@
-# Local Scribe POC Action Plan
+# Watcher POC Action Plan
 
 This plan turns the MVP shell into a working privacy-first proof of concept. It is intentionally phased so the next implementation step can begin when the user replies:
 
@@ -256,7 +256,7 @@ Implementation tasks:
   - optional tiny OCR inference after OCR models are installed.
 - Add launcher integration:
   - `.\start.ps1` warns or fails clearly when GPU is required but unavailable.
-  - `.\scripts\start-localscribe.ps1 -AllowCpuFallback` may be added later for explicit CPU fallback.
+  - `.\scripts\start-watcher.ps1 -AllowCpuFallback` may be added later for explicit CPU fallback.
 - Add UI/backend diagnostics:
   - `gpu_ready`
   - `gpu_required`

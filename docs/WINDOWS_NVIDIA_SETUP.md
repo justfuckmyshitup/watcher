@@ -68,14 +68,14 @@ Known warning on the current target machine: PaddleOCR may report that Paddle wa
 Run the app with the Windows launcher. Run Ollama or LM Studio on Windows with GPU acceleration. Set:
 
 ```powershell
-$env:LOCAL_SCRIBE_OLLAMA_URL="http://127.0.0.1:11434"
+$env:WATCHER_OLLAMA_URL="http://127.0.0.1:11434"
 .\start.ps1 -ModelProvider ollama
 ```
 
 or:
 
 ```powershell
-$env:LOCAL_SCRIBE_LMSTUDIO_URL="http://127.0.0.1:1234"
+$env:WATCHER_LMSTUDIO_URL="http://127.0.0.1:1234"
 .\start.ps1 -ModelProvider lmstudio
 ```
 

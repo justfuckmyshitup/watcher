@@ -7,11 +7,11 @@ param(
 . "$PSScriptRoot\launcher-lib.ps1"
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Get-LSRepoRoot
+$repoRoot = Get-WatcherRepoRoot
 Set-Location $repoRoot
 
 if ($Profile -ne "poc") {
-  Write-LSErrorMessage "Unknown model profile '$Profile'. Supported profile: poc."
+  Write-WatcherErrorMessage "Unknown model profile '$Profile'. Supported profile: poc."
   exit 1
 }
 
@@ -58,13 +58,13 @@ $report = [ordered]@{
 if ($Json) {
   $report | ConvertTo-Json -Depth 8
 } else {
-  Write-LSStatus "Checking local model profile '$Profile'..."
-  Write-LSStatus "Model: microsoft/Phi-4-mini-reasoning-onnx"
-  Write-LSStatus "Selected path: $selectedPath"
+  Write-WatcherStatus "Checking local model profile '$Profile'..."
+  Write-WatcherStatus "Model: microsoft/Phi-4-mini-reasoning-onnx"
+  Write-WatcherStatus "Selected path: $selectedPath"
   if ($ready) {
-    Write-LSStatus "Model files are present."
+    Write-WatcherStatus "Model files are present."
   } else {
-    Write-LSWarn "Model files are missing or incomplete."
+    Write-WatcherWarn "Model files are missing or incomplete."
     Write-Host "Run: .\scripts\download-models.ps1 -Profile poc"
   }
 }

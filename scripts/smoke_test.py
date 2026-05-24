@@ -9,7 +9,7 @@ import urllib.request
 from pathlib import Path
 
 
-API = os.getenv("LOCAL_SCRIBE_API", "http://127.0.0.1:8765/api")
+API = os.getenv("WATCHER_API", "http://127.0.0.1:8765/api")
 
 
 def request(path: str, method: str = "GET", payload: dict | None = None) -> dict | list:

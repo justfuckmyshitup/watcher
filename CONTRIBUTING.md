@@ -1,10 +1,10 @@
 # Contributing
 
-Thanks for helping make Local Scribe more useful, safer, and easier to run.
+Thanks for helping make Watcher more useful, safer, and easier to run.
 
 ## Project Direction
 
-Local Scribe is a local-first, privacy-first desktop documentation assistant. Good contributions usually improve one of these areas:
+Watcher is a local-first, privacy-first desktop documentation assistant. Good contributions usually improve one of these areas:
 
 - Launcher reliability on Windows first, with practical Linux/macOS support where possible
 - OCR/runtime setup clarity

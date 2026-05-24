@@ -1,8 +1,8 @@
-# Local Scribe
+# Watcher
 
 Privacy-first local desktop context-to-notes assistant.
 
-Local Scribe is a local-first desktop documentation assistant. It starts an explicit user-controlled capture session, converts approved desktop context into compact structured memory, and generates editable Markdown notes such as summaries, SOPs, runbooks, ticket updates, and audit narratives.
+Watcher is a local-first desktop documentation assistant. It starts an explicit user-controlled capture session, converts approved desktop context into compact structured memory, and generates editable Markdown notes such as summaries, SOPs, runbooks, ticket updates, and audit narratives.
 
 The MVP is intentionally conservative: raw screenshots are ephemeral processing material. They are hashed and converted into redacted context events, then discarded. The durable store is SQLite metadata, hashes, redacted snippets, rollups, notes, model run metadata, redaction findings, and user action logs.
 
@@ -12,7 +12,7 @@ This repository is intended as a community helper project and show-and-tell POC 
 
 ## Why This Exists
 
-I am extremely forgetful and ADHD, and I wanted a local tool that could help me reconstruct what I worked on without turning my computer into a surveillance archive. Local Scribe is my attempt to improve my own note taking while exploring OCR, local AI runtimes, GPU acceleration, redaction, and privacy-preserving context memory.
+I am extremely forgetful and ADHD, and I wanted a local tool that could help me reconstruct what I worked on without turning my computer into a surveillance archive. Watcher is my attempt to improve my own note taking while exploring OCR, local AI runtimes, GPU acceleration, redaction, and privacy-preserving context memory.
 
 The goal is not to record everything forever. The goal is to capture just enough context during a user-controlled session to produce useful notes, then throw away the raw screen material.
 
@@ -72,7 +72,7 @@ Useful flags:
 Stop services started by the launcher:
 
 ```powershell
-.\scripts\stop-localscribe.ps1
+.\scripts\stop-watcher.ps1
 ```
 
 Check dependencies without starting:
@@ -104,7 +104,7 @@ Download/check the local POC LLM explicitly:
 
 ## Bring Your Own Model
 
-Local Scribe is a BYO-model project. The code supports provider slots rather than assuming one hosted model:
+Watcher is a BYO-model project. The code supports provider slots rather than assuming one hosted model:
 
 - `onnx-phi`: local ONNX Runtime GenAI provider. The reference/tested POC profile is `microsoft/Phi-4-mini-reasoning-onnx`, downloaded only when explicitly requested.
 - `ollama`: host-local Ollama endpoint.
@@ -126,7 +126,7 @@ Set up the live RTX 3060-class POC environment without installing system depende
 macOS/Linux practical launcher:
 
 ```sh
-./scripts/start-localscribe.sh
+./scripts/start-watcher.sh
 ```
 
 ## Manual Dev Start
@@ -139,10 +139,10 @@ python -m venv .venv
 pip install -r backend\requirements.txt
 npm install
 python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8765
-npm --workspace @localscribe/desktop run dev -- --host 127.0.0.1 --port 5173
+npm --workspace @watcher/desktop run dev -- --host 127.0.0.1 --port 5173
 $env:VITE_DEV_SERVER_URL="http://127.0.0.1:5173"
-$env:LOCAL_SCRIBE_API_BASE="http://127.0.0.1:8765/api"
-npm --workspace @localscribe/desktop run electron:dev
+$env:WATCHER_API_BASE="http://127.0.0.1:8765/api"
+npm --workspace @watcher/desktop run electron:dev
 ```
 
 ## Docker Backend
@@ -172,7 +172,7 @@ Raw context is not a durable record:
 .\scripts\benchmark-poc.ps1 -RequireGpu -AllowIncomplete
 python -m pytest backend\tests
 python scripts\smoke_test.py
-npm --workspace @localscribe/desktop run build
+npm --workspace @watcher/desktop run build
 ```
 
 The live POC smoke uses isolated storage under `app-data/poc-smoke` and also exercises the backend session control lifecycle: pause, resume, idempotent stop, and skipped ingest after a session is paused or stopped.

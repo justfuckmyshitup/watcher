@@ -24,4 +24,4 @@ models/*
 !models/.gitkeep
 data/*
 !data/.gitkeep
-docs/assets/local-scribe-dashboard-concept.png
+docs/assets/watcher-dashboard-concept.png

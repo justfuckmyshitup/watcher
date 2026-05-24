@@ -10,7 +10,7 @@ This is intentionally short of a full installer. It is easier to debug while the
 
 ## Target Packaged Experience
 
-Long term, Local Scribe should ship as either:
+Long term, Watcher should ship as either:
 
 - A Windows installer.
 - A portable app bundle / EXE-like directory.

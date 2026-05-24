@@ -1,6 +1,6 @@
 # Architecture
 
-Local Scribe uses a hybrid architecture:
+Watcher uses a hybrid architecture:
 
 ```text
 Electron desktop shell

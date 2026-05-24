@@ -16,15 +16,15 @@ param(
 . "$PSScriptRoot\launcher-lib.ps1"
 
 $ErrorActionPreference = "Stop"
-$repoRoot = Get-LSRepoRoot
+$repoRoot = Get-WatcherRepoRoot
 Set-Location $repoRoot
 
 $python = Join-Path $repoRoot ".venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $python)) {
-  $python = Get-LSCommand @("python.exe", "python")
+  $python = Get-WatcherCommand @("python.exe", "python")
 }
 if (-not $python) {
-  Write-LSErrorMessage "Python was not found. Create .venv or install Python, then rerun this script."
+  Write-WatcherErrorMessage "Python was not found. Create .venv or install Python, then rerun this script."
   exit 1
 }
 
@@ -45,12 +45,12 @@ if (-not [string]::IsNullOrWhiteSpace($OutputDir)) {
   $args += @("--output-dir", $OutputDir)
 }
 
-Write-LSStatus "Running POC benchmark..."
-Write-LSStatus "OCR: $OcrProvider / $OcrProfile"
-Write-LSStatus "LLM: $ModelProvider"
-Write-LSStatus "Iterations: $Iterations"
+Write-WatcherStatus "Running POC benchmark..."
+Write-WatcherStatus "OCR: $OcrProvider / $OcrProfile"
+Write-WatcherStatus "LLM: $ModelProvider"
+Write-WatcherStatus "Iterations: $Iterations"
 if ($RequireGpu) {
-  Write-LSStatus "GPU proof required."
+  Write-WatcherStatus "GPU proof required."
 }
 
 & $python @args

@@ -149,7 +149,7 @@ Supported POC profiles:
 - `screen-fast`: PP-OCRv5 mobile detection/recognition, intended for frequent desktop frames.
 - `screen-accurate`: PP-OCRv5 server detection/recognition, intended for slower but stronger extraction.
 
-The PaddleOCR provider requires in-memory image processing by default. Temporary frame files are disabled unless `LOCAL_SCRIBE_OCR_ALLOW_TEMP_FILES=true` is explicitly set; when enabled, files are written under `app-data/tmp/ocr-cycle-*` and deleted in the same processing cycle.
+The PaddleOCR provider requires in-memory image processing by default. Temporary frame files are disabled unless `WATCHER_OCR_ALLOW_TEMP_FILES=true` is explicitly set; when enabled, files are written under `app-data/tmp/ocr-cycle-*` and deleted in the same processing cycle.
 
 OCR diagnostics:
 

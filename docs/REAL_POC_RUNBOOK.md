@@ -1,6 +1,6 @@
 # Real POC Runbook
 
-This runbook is the fastest path from a configured checkout to a real Local Scribe POC on the Windows RTX 3060 target machine.
+This runbook is the fastest path from a configured checkout to a real Watcher POC on the Windows RTX 3060 target machine.
 
 ## One-Time Setup
 

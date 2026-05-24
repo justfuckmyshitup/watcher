@@ -8,8 +8,8 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
-os.environ.setdefault("LOCAL_SCRIBE_PROVIDER", "mock")
-os.environ.setdefault("LOCAL_SCRIBE_OCR_PROVIDER", "mock")
+os.environ.setdefault("WATCHER_PROVIDER", "mock")
+os.environ.setdefault("WATCHER_OCR_PROVIDER", "mock")
 
 from backend.app.main import app
 from backend.app.ocr import providers as ocr_providers
@@ -70,7 +70,7 @@ def test_ingest_uses_ocr_result_before_privacy(monkeypatch) -> None:
     def fake_provider(_name: str | None = None, **_kwargs: object) -> FakeOcrProvider:
         return FakeOcrProvider()
 
-    monkeypatch.setenv("LOCAL_SCRIBE_OCR_PROVIDER", "fake")
+    monkeypatch.setenv("WATCHER_OCR_PROVIDER", "fake")
     monkeypatch.setattr("backend.app.ocr.providers.get_ocr_provider", fake_provider)
 
     session = client.post("/api/sessions", json={"objective": "ocr ingest test"}).json()
@@ -78,7 +78,7 @@ def test_ingest_uses_ocr_result_before_privacy(monkeypatch) -> None:
         f"/api/sessions/{session['id']}/events",
         json={
             "active_app": "Terminal",
-            "active_window_title": "Local Scribe",
+            "active_window_title": "Watcher",
             "capture_source": "desktop",
             "screenshot_base64": base64.b64encode(b"synthetic-frame").decode("ascii"),
             "ocr_text": "",

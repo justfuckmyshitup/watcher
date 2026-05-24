@@ -4,7 +4,7 @@
 
 The latest offscreen Electron render is stored at:
 
-`docs/assets/local-scribe-dashboard-render.png`
+`docs/assets/watcher-dashboard-render.png`
 
 It informed the implemented layout: left navigation, explicit capture status, session controls, live context preview, notes editor, and right-side runtime/privacy diagnostics.
 
@@ -15,7 +15,7 @@ It informed the implemented layout: left navigation, explicit capture status, se
 - The backend creates SQLite tables on startup.
 - Tests use FastAPI `TestClient`.
 - Raw screenshots are not persisted; tests assert `raw_artifact_persisted` is false.
-- Windows launcher entry point is `start.ps1`, which delegates to `scripts/start-localscribe.ps1`.
+- Windows launcher entry point is `start.ps1`, which delegates to `scripts/start-watcher.ps1`.
 - Plain `start.ps1` now opens an interactive launcher menu. Use `-NoPrompt` for scripted live defaults.
 - Launcher logs are written under `app-data/logs/launcher`.
 - Launcher process state is written under `app-data/launcher` and is ignored by git.
@@ -48,7 +48,7 @@ It informed the implemented layout: left navigation, explicit capture status, se
 9. Close Electron.
 10. Confirm backend and Vite stop cleanly.
 11. Run `.\start.ps1` again and confirm it reuses installed dependencies.
-12. Run `.\scripts\stop-localscribe.ps1` and confirm it does not affect unrelated processes.
+12. Run `.\scripts\stop-watcher.ps1` and confirm it does not affect unrelated processes.
 13. Run `.\start.ps1 -VitePort 5174` and confirm port overrides work.
 14. Run `.\start.ps1 -DockerBackend` with Docker Desktop running and confirm backend health succeeds.
 15. Run `.\scripts\launcher-smoke.ps1` to verify dependency checks, backend startup, Vite startup, Electron command formation, and cleanup.

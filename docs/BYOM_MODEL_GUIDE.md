@@ -1,6 +1,6 @@
 # Bring Your Own Model Guide
 
-Local Scribe is designed to run locally without bundling model weights. The project should stay lightweight on GitHub: code, docs, scripts, tests, and configuration belong in the repo; downloaded models do not.
+Watcher is designed to run locally without bundling model weights. The project should stay lightweight on GitHub: code, docs, scripts, tests, and configuration belong in the repo; downloaded models do not.
 
 ## Recommended Community Default
 
@@ -34,8 +34,8 @@ The launcher expects files to already exist when running offline. Normal startup
 Use this when a user already runs Ollama locally and wants to manage models outside this repo.
 
 ```powershell
-$env:LOCAL_SCRIBE_PROVIDER="ollama"
-$env:LOCAL_SCRIBE_OLLAMA_URL="http://127.0.0.1:11434"
+$env:WATCHER_PROVIDER="ollama"
+$env:WATCHER_OLLAMA_URL="http://127.0.0.1:11434"
 .\start.ps1
 ```
 
@@ -44,8 +44,8 @@ $env:LOCAL_SCRIBE_OLLAMA_URL="http://127.0.0.1:11434"
 Use this when a user prefers LM Studio's local OpenAI-compatible server.
 
 ```powershell
-$env:LOCAL_SCRIBE_PROVIDER="lmstudio"
-$env:LOCAL_SCRIBE_LMSTUDIO_URL="http://127.0.0.1:1234"
+$env:WATCHER_PROVIDER="lmstudio"
+$env:WATCHER_LMSTUDIO_URL="http://127.0.0.1:1234"
 .\start.ps1
 ```
 

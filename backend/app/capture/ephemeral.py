@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import base64
 import binascii
-import re
 import time
 from pathlib import Path
 from typing import Any
 
 from backend.app.config import settings
+from backend.app.context.focus_filter import clean_focus_text
 from backend.app.redaction.service import redaction_service, stable_hash
 
 
@@ -89,22 +89,7 @@ class EphemeralFrameProcessor:
 
     @staticmethod
     def _summary_snippet(text: str) -> str:
-        cleaned = " ".join(text.split())
-        for pattern in (
-            r"\bFile\s+Edit\s+View(?:\s+Window\s+Help)?\b",
-            r"\bLn\s+\d+\s*,\s*Col\s+\d+\b",
-            r"\b\d+\s+characters?\b",
-            r"\bPlain\s+text\b",
-            r"\bWindows\s+\(CRLF\)",
-            r"\bUTF-?8\b",
-            r"\b\d+\s*%",
-        ):
-            cleaned = re.sub(pattern, " ", cleaned, flags=re.I)
-        cleaned = re.sub(r"(?:\s*\.env\b){3,}", " .env", cleaned, flags=re.I)
-        cleaned = re.sub(r"\s+", " ", cleaned).strip(" -:;,.")
-        if len(cleaned) <= 280:
-            return cleaned
-        return f"{cleaned[:277]}..."
+        return clean_focus_text(text, strip_file_references=True, limit=280)
 
 
 ephemeral_frame_processor = EphemeralFrameProcessor()

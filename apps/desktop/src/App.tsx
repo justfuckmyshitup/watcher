@@ -23,7 +23,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
-const API_BASE = window.localScribe?.apiBase ?? "http://127.0.0.1:8765/api";
+const API_BASE = window.watcher?.apiBase ?? "http://127.0.0.1:8765/api";
 
 type View = "dashboard" | "session" | "notes" | "history" | "runtime" | "privacy" | "exports" | "diagnostics";
 
@@ -329,7 +329,7 @@ export default function App() {
   }, []);
 
   const refreshCaptureSources = useCallback(async () => {
-    const getCaptureSources = window.localScribe?.getCaptureSources;
+    const getCaptureSources = window.watcher?.getCaptureSources;
     if (!getCaptureSources) {
       setCaptureSources([browserCaptureSource]);
       setSelectedCaptureSourceId(browserCaptureSource.id);
@@ -490,8 +490,8 @@ export default function App() {
 
   const prepareCaptureStream = async (): Promise<PreparedCapture> => {
     const source = captureSources.find((item) => item.id === selectedCaptureSourceId) ?? browserCaptureSource;
-    if (source.id !== browserCaptureSource.id && window.localScribe?.setCaptureSource && navigator.mediaDevices?.getDisplayMedia) {
-      await window.localScribe.setCaptureSource(source.id);
+    if (source.id !== browserCaptureSource.id && window.watcher?.setCaptureSource && navigator.mediaDevices?.getDisplayMedia) {
+      await window.watcher.setCaptureSource(source.id);
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           frameRate: { ideal: 2, max: 5 },
@@ -984,7 +984,7 @@ export default function App() {
         <div className="brand">
           <div className="brand-mark"><ScrollText size={20} /></div>
           <div>
-            <strong>Local Scribe</strong>
+            <strong>Watcher</strong>
             <span>Private documentation assistant</span>
           </div>
         </div>
@@ -1606,15 +1606,15 @@ function formatChangedRatio(value: number) {
 }
 
 function captureReadinessIssue(selectedSource: CaptureSource, sources: CaptureSource[]) {
-  const hasElectronBridge = Boolean(window.localScribe?.getCaptureSources);
+  const hasElectronBridge = Boolean(window.watcher?.getCaptureSources);
   const canUseBrowserPicker = Boolean(navigator.mediaDevices?.getDisplayMedia);
   if (hasElectronBridge && sources.length === 1 && sources[0].id === browserCaptureSource.id) {
-    return "The desktop shell did not return any screen or window sources. Restart Local Scribe with .\\start.ps1.";
+    return "The desktop shell did not return any screen or window sources. Restart Watcher with .\\start.ps1.";
   }
   if (selectedSource.id === browserCaptureSource.id && !canUseBrowserPicker) {
     return hasElectronBridge
       ? "Choose a desktop screen or window source instead of the browser picker."
-      : "This browser preview cannot capture screens. Use the Local Scribe desktop window launched by .\\start.ps1.";
+      : "This browser preview cannot capture screens. Use the Watcher desktop window launched by .\\start.ps1.";
   }
   return "";
 }
@@ -1626,13 +1626,13 @@ function friendlyCaptureError(error: unknown, sources: CaptureSource[]) {
   if (normalized.includes("not supported") || normalized.includes("not allowed by the user agent")) {
     return hasElectronSources
       ? "The selected desktop source was not accepted. Choose a screen source and try again."
-      : "This browser preview cannot capture screens. Use the Local Scribe desktop window launched by .\\start.ps1.";
+      : "This browser preview cannot capture screens. Use the Watcher desktop window launched by .\\start.ps1.";
   }
   if (normalized.includes("permission") || normalized.includes("notallowed") || normalized.includes("denied")) {
     return "Screen capture permission was denied. Start again and choose a screen or window.";
   }
   if (normalized.includes("notfound")) {
-    return "No capturable screen or window was found. Refresh sources or restart Local Scribe.";
+    return "No capturable screen or window was found. Refresh sources or restart Watcher.";
   }
   return message || "Unknown capture error.";
 }

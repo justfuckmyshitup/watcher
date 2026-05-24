@@ -1,6 +1,6 @@
 # Local Model Setup
 
-Local Scribe is a bring-your-own-model project. The repository documents a tested reference profile, but model weights are not bundled and should not be committed. See `docs/BYOM_MODEL_GUIDE.md` for the community-facing model policy.
+Watcher is a bring-your-own-model project. The repository documents a tested reference profile, but model weights are not bundled and should not be committed. See `docs/BYOM_MODEL_GUIDE.md` for the community-facing model policy.
 
 The backend supports a provider abstraction:
 
@@ -9,7 +9,7 @@ The backend supports a provider abstraction:
 - `lmstudio`: host-local LM Studio OpenAI-compatible endpoint.
 - `onnx-phi`: local ONNX Runtime GenAI provider. The reference POC profile uses `microsoft/Phi-4-mini-reasoning-onnx`.
 
-Set `LOCAL_SCRIBE_PROVIDER=mock`, `ollama`, `lmstudio`, or `onnx-phi`, or pass `-ModelProvider` to the Windows launcher.
+Set `WATCHER_PROVIDER=mock`, `ollama`, `lmstudio`, or `onnx-phi`, or pass `-ModelProvider` to the Windows launcher.
 
 ## Hugging Face ONNX Phi Reference POC
 
@@ -42,7 +42,7 @@ Install the runtime package explicitly inside `.venv` after confirming Python/CU
 .\.venv\Scripts\python.exe -m pip install --pre onnxruntime-genai-cuda
 ```
 
-The launcher does not download models during normal startup. If `-ModelProvider onnx-phi` or `LOCAL_SCRIBE_PROVIDER=onnx-phi` is used and model files are missing, startup fails with the download command to run. This keeps normal operation local and repeatable.
+The launcher does not download models during normal startup. If `-ModelProvider onnx-phi` or `WATCHER_PROVIDER=onnx-phi` is used and model files are missing, startup fails with the download command to run. This keeps normal operation local and repeatable.
 
 ## Ollama
 
@@ -56,8 +56,8 @@ ollama serve
 Use:
 
 ```powershell
-$env:LOCAL_SCRIBE_PROVIDER="ollama"
-$env:LOCAL_SCRIBE_OLLAMA_URL="http://127.0.0.1:11434"
+$env:WATCHER_PROVIDER="ollama"
+$env:WATCHER_OLLAMA_URL="http://127.0.0.1:11434"
 ```
 
 ## LM Studio
@@ -65,8 +65,8 @@ $env:LOCAL_SCRIBE_OLLAMA_URL="http://127.0.0.1:11434"
 Start the LM Studio local server and load a model. Use:
 
 ```powershell
-$env:LOCAL_SCRIBE_PROVIDER="lmstudio"
-$env:LOCAL_SCRIBE_LMSTUDIO_URL="http://127.0.0.1:1234"
+$env:WATCHER_PROVIDER="lmstudio"
+$env:WATCHER_LMSTUDIO_URL="http://127.0.0.1:1234"
 ```
 
 ## Offline Runtime

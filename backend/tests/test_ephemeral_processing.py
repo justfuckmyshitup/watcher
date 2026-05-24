@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
-os.environ.setdefault("LOCAL_SCRIBE_PROVIDER", "mock")
+os.environ.setdefault("WATCHER_PROVIDER", "mock")
 
 from backend.app.capture.ephemeral import EphemeralFrameProcessor
 from backend.app.main import app

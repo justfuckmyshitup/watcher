@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
-const outputPath = path.join(root, "docs", "assets", "local-scribe-dashboard-render.png");
+const outputPath = path.join(root, "docs", "assets", "watcher-dashboard-render.png");
 
 async function main() {
   await app.whenReady();

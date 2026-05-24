@@ -2,7 +2,7 @@ export {};
 
 declare global {
   interface Window {
-    localScribe?: {
+    watcher?: {
       apiBase: string;
       platform: string;
       getCaptureSources?: () => Promise<Array<{ id: string; name: string }>>;

@@ -5,7 +5,7 @@ import os
 
 from fastapi.testclient import TestClient
 
-os.environ.setdefault("LOCAL_SCRIBE_PROVIDER", "mock")
+os.environ.setdefault("WATCHER_PROVIDER", "mock")
 
 from backend.app.main import app
 from backend.app.privacy.decision_engine import privacy_decision_engine
@@ -49,7 +49,7 @@ def test_safe_text_is_stored_redacted() -> None:
     redacted = redaction_service.redact_text("Restarted the local backend and checked the health endpoint.")
     decision = privacy_decision_engine.evaluate(
         active_app="Terminal",
-        window_title="Local Scribe",
+        window_title="Watcher",
         redacted_text=redacted.text,
         redaction_findings=redacted.findings,
         sensitivity_score=redacted.sensitivity_score,

@@ -2,4 +2,4 @@
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-exec "$ROOT/scripts/start-localscribe.sh" "$@"
+exec "$ROOT/scripts/start-watcher.sh" "$@"

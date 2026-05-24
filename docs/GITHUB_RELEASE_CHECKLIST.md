@@ -20,7 +20,7 @@ Use this before making the repository public.
 
 ## BYO Model
 
-- [ ] README describes Local Scribe as bring-your-own-model.
+- [ ] README describes Watcher as bring-your-own-model.
 - [ ] Reference model is documented, not bundled.
 - [ ] Download commands are explicit.
 - [ ] Startup does not silently download models.

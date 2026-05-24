@@ -2,7 +2,7 @@
 
 ## Threat Model
 
-Local Scribe processes sensitive desktop context. The primary risks are accidental capture of secrets, durable storage of screenshots, over-broad container access, unintended network calls, and ambiguous user consent.
+Watcher processes sensitive desktop context. The primary risks are accidental capture of secrets, durable storage of screenshots, over-broad container access, unintended network calls, and ambiguous user consent.
 
 The MVP mitigates these by keeping capture explicit, storing compact redacted context instead of raw images, binding services to localhost, and avoiding privileged Docker patterns.
 
@@ -33,7 +33,7 @@ Evidence screenshots are not retained in the MVP. A future evidence mode must re
 
 ## OCR Runtime Policy
 
-OCR is disabled by default via the mock provider. The live PaddleOCR provider is explicit and should be run with GPU required for POC profiles. OCR input frames are processed in memory by default. Temporary OCR frame files require `LOCAL_SCRIBE_OCR_ALLOW_TEMP_FILES=true`, are scoped to `app-data/tmp/ocr-cycle-*`, and are deleted in the same processing cycle.
+OCR is disabled by default via the mock provider. The live PaddleOCR provider is explicit and should be run with GPU required for POC profiles. OCR input frames are processed in memory by default. Temporary OCR frame files require `WATCHER_OCR_ALLOW_TEMP_FILES=true`, are scoped to `app-data/tmp/ocr-cycle-*`, and are deleted in the same processing cycle.
 
 ## Redaction
 
