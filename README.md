@@ -153,6 +153,29 @@ npm --workspace @watcher/desktop run electron:dev
 
 The container maps `127.0.0.1:8765:8765`, uses a named app-data volume, drops Linux capabilities, avoids privileged mode, avoids the Docker socket, and does not receive desktop capture access.
 
+
+## Local capture and privacy flow
+
+The local API processes captures in memory, then applies a privacy
+decision before storing an event. Raw screenshots and unredacted OCR
+text are not durable artifacts.
+
+```text
+User-controlled desktop session
+              |
+              v
+Capture frame + OCR
+              |
+              v
+Local FastAPI processor
+  hash + redact |
+              v
+Privacy decision
+  +--> redacted or metadata-only event --> SQLite
+  `--> drop event
+```
+
+
 ## Core Privacy Rule
 
 Raw context is not a durable record:
