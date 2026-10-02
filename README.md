@@ -156,22 +156,25 @@ The container maps `127.0.0.1:8765:8765`, uses a named app-data volume, drops Li
 
 ## Local capture and privacy flow
 
-The local API processes each capture in memory, then applies a privacy decision before an event is stored. Raw screenshots and unredacted OCR text are not kept as durable artifacts.
+The local API processes captures in memory, then applies a privacy
+decision before storing an event. Raw screenshots and unredacted OCR
+text are not durable artifacts.
 
 ```text
 User-controlled desktop session
               |
               v
-Capture frame + OCR text
+Capture frame + OCR
               |
               v
 Local FastAPI processor
-       | hash + redact
-       v
+  hash + redact |
+              v
 Privacy decision
   +--> redacted or metadata-only event --> SQLite
-  +--> drop event
+  `--> drop event
 ```
+
 
 ## Core Privacy Rule
 
